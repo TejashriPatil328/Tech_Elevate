@@ -1,5 +1,7 @@
+const API_URL = import.meta.env.VITE_API_URL;
+
 export async function executeCode(language, code) {
-  const res = await fetch("http://localhost:3000/api/execute", {
+  const res = await fetch(`${API_URL}/execute`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

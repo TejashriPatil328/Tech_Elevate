@@ -1,3 +1,5 @@
+const API_URL = import.meta.env.VITE_API_URL;
+
 import { useEffect } from "react";
 import { useUser } from "@clerk/clerk-react";
 
@@ -9,7 +11,7 @@ const useSyncUser = () => {
 
     const sync = async () => {
       try {
-        await fetch("http://localhost:3000/api/users/sync", {
+        await fetch(`${API_URL}/users/sync`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
