@@ -21,12 +21,17 @@ router.post("/", (req, res) => {
     case "python":
       filename = path.join(tempDir, "main.py");
       fs.writeFileSync(filename, code);
-      command = `py "${filename}"`;
+
+      command =
+        process.platform === "win32"
+          ? `py "${filename}"`
+          : `python3 "${filename}"`;
       break;
 
     case "javascript":
       filename = path.join(tempDir, "main.js");
       fs.writeFileSync(filename, code);
+
       command = `node "${filename}"`;
       break;
 
@@ -36,11 +41,11 @@ router.post("/", (req, res) => {
         .replace(/class\s+Solution/g, "class Main");
 
       filename = path.join(tempDir, "Main.java");
-
       fs.writeFileSync(filename, javaCode);
 
       command = `javac "${filename}" && java -cp "${tempDir}" Main`;
       break;
+
     default:
       return res.status(400).json({
         success: false,
