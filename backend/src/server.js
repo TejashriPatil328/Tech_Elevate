@@ -1,6 +1,7 @@
 import express from "express";
 import path from "path";
 import cors from "cors";
+import { exec } from "child_process";
 import { serve } from "inngest/express";
 import { clerkMiddleware } from "@clerk/express";
 
@@ -62,4 +63,26 @@ const startServer = async () => {
   }
 };
 
+exec("java -version", (err, stdout, stderr) => {
+  console.log("JAVA:", stdout || stderr);
+});
+
+exec("javac -version", (err, stdout, stderr) => {
+  console.log("JAVAC:", stdout || stderr);
+});
+
+exec("python3 --version", (err, stdout, stderr) => {
+  console.log("PYTHON3:", stdout || stderr);
+});
+
+exec("python --version", (err, stdout, stderr) => {
+  console.log("PYTHON:", stdout || stderr);
+});
+
+exec("node -v", (err, stdout, stderr) => {
+  console.log("NODE:", stdout || stderr);
+});
+
 startServer();
+
+
