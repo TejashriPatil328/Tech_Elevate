@@ -71,11 +71,9 @@ exec("javac -version", (err, stdout, stderr) => {
   console.log("JAVAC:", stdout || stderr);
 });
 
-exec("python3 --version", (err, stdout, stderr) => {
-  console.log("PYTHON3:", stdout || stderr);
-});
+const pythonCommand = process.platform === "win32" ? "python" : "python3";
 
-exec("python --version", (err, stdout, stderr) => {
+exec(`${pythonCommand} --version`, (err, stdout, stderr) => {
   console.log("PYTHON:", stdout || stderr);
 });
 
