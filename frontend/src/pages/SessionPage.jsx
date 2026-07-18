@@ -21,6 +21,7 @@ function SessionPage() {
   const { user } = useUser();
   const [output, setOutput] = useState(null);
   const [isRunning, setIsRunning] = useState(false);
+  const [activeTab, setActiveTab] = useState("description");
 
   const { data: sessionData, isLoading: loadingSession, refetch } = useSessionById(id);
 
@@ -52,8 +53,6 @@ function SessionPage() {
     if (isHost || isParticipant) return;
 
     joinSessionMutation.mutate(id, { onSuccess: refetch });
-
-    // remove the joinSessionMutation, refetch from dependencies to avoid infinite loop
   }, [session, user, loadingSession, isHost, isParticipant, id]);
 
   // redirect the "participant" when session ends
@@ -73,7 +72,6 @@ function SessionPage() {
   const handleLanguageChange = (e) => {
     const newLang = e.target.value;
     setSelectedLanguage(newLang);
-    // use problem-specific starter code
     const starterCode = problemData?.starterCode?.[newLang] || "";
     setCode(starterCode);
     setOutput(null);
@@ -90,33 +88,61 @@ function SessionPage() {
 
   const handleEndSession = () => {
     if (confirm("Are you sure you want to end this session? All participants will be notified.")) {
-      // this will navigate the HOST to dashboard
       endSessionMutation.mutate(id, { onSuccess: () => navigate("/dashboard") });
     }
   };
 
   return (
-    <div className="h-screen bg-base-100 flex flex-col">
+    <div className="h-screen bg-base-100 flex flex-col overflow-hidden">
       <Navbar />
 
-      <div className="flex-1">
+      <div className="flex-1 min-h-0">
         <PanelGroup direction="horizontal">
-          {/* LEFT PANEL - CODE EDITOR & PROBLEM DETAILS */}
+
+          {/* LEFT PANEL */}
           <Panel defaultSize={50} minSize={30}>
-            <PanelGroup direction="vertical">
-              {/* PROBLEM DSC PANEL */}
-              <Panel defaultSize={50} minSize={20}>
-                <div className="h-full overflow-y-auto bg-base-200">
-                  {/* HEADER SECTION */}
+            <div className="h-full flex flex-col min-h-0">
+
+              {/* TOP TABS */}
+              <div className="bg-base-100 border-b border-base-300 flex h-14 flex-shrink-0">
+                <button
+                  className={`flex-1 font-semibold border-b-2 transition ${activeTab === "description"
+                      ? "border-primary text-primary"
+                      : "border-transparent text-base-content/70"
+                    }`}
+                  onClick={() => setActiveTab("description")}
+                >
+                  📄 Description
+                </button>
+
+                <button
+                  className={`flex-1 font-semibold border-b-2 transition ${activeTab === "code"
+                      ? "border-primary text-primary"
+                      : "border-transparent text-base-content/70"
+                    }`}
+                  onClick={() => setActiveTab("code")}
+                >
+                  💻 Code
+                </button>
+              </div>
+
+              {activeTab === "description" ? (
+                <div className="flex-1 overflow-y-auto bg-base-200 min-h-0">
+
+                  {/* HEADER */}
                   <div className="p-6 bg-base-100 border-b border-base-300">
                     <div className="flex items-start justify-between mb-3">
                       <div>
                         <h1 className="text-3xl font-bold text-base-content">
                           {session?.problem || "Loading..."}
                         </h1>
+
                         {problemData?.category && (
-                          <p className="text-base-content/60 mt-1">{problemData.category}</p>
+                          <p className="text-base-content/60 mt-1">
+                            {problemData.category}
+                          </p>
                         )}
+
                         <p className="text-base-content/60 mt-2">
                           Host: {session?.host?.name || "Loading..."} •{" "}
                           {session?.participant ? 2 : 1}/2 participants
@@ -129,9 +155,11 @@ function SessionPage() {
                             session?.difficulty
                           )}`}
                         >
-                          {session?.difficulty.slice(0, 1).toUpperCase() +
-                            session?.difficulty.slice(1) || "Easy"}
+                          {session?.difficulty
+                            ? session.difficulty.slice(0, 1).toUpperCase() + session.difficulty.slice(1)
+                            : "Easy"}
                         </span>
+
                         {isHost && session?.status === "active" && (
                           <button
                             onClick={handleEndSession}
@@ -146,60 +174,52 @@ function SessionPage() {
                             End Session
                           </button>
                         )}
+
                         {session?.status === "completed" && (
-                          <span className="badge badge-ghost badge-lg">Completed</span>
+                          <span className="badge badge-ghost badge-lg">
+                            Completed
+                          </span>
                         )}
                       </div>
                     </div>
                   </div>
 
                   <div className="p-6 space-y-6">
-                    {/* problem desc */}
+                    {/* DESCRIPTION */}
                     {problemData?.description && (
                       <div className="bg-base-100 rounded-xl shadow-sm p-5 border border-base-300">
-                        <h2 className="text-xl font-bold mb-4 text-base-content">Description</h2>
-                        <div className="space-y-3 text-base leading-relaxed">
-                          <p className="text-base-content/90">{problemData.description.text}</p>
+                        <h2 className="text-xl font-bold mb-4">Description</h2>
+                        <div className="space-y-3">
+                          <p>{problemData.description.text}</p>
                           {problemData.description.notes?.map((note, idx) => (
-                            <p key={idx} className="text-base-content/90">
-                              {note}
-                            </p>
+                            <p key={idx}>{note}</p>
                           ))}
                         </div>
                       </div>
                     )}
 
-                    {/* examples section */}
-                    {problemData?.examples && problemData.examples.length > 0 && (
+                    {/* EXAMPLES */}
+                    {problemData?.examples?.length > 0 && (
                       <div className="bg-base-100 rounded-xl shadow-sm p-5 border border-base-300">
-                        <h2 className="text-xl font-bold mb-4 text-base-content">Examples</h2>
-
+                        <h2 className="text-xl font-bold mb-4">Examples</h2>
                         <div className="space-y-4">
                           {problemData.examples.map((example, idx) => (
                             <div key={idx}>
                               <div className="flex items-center gap-2 mb-2">
                                 <span className="badge badge-sm">{idx + 1}</span>
-                                <p className="font-semibold text-base-content">Example {idx + 1}</p>
+                                <p className="font-semibold">Example {idx + 1}</p>
                               </div>
-                              <div className="bg-base-200 rounded-lg p-4 font-mono text-sm space-y-1.5">
-                                <div className="flex gap-2">
-                                  <span className="text-primary font-bold min-w-[70px]">
-                                    Input:
-                                  </span>
-                                  <span>{example.input}</span>
+
+                              <div className="bg-base-200 rounded-lg p-4 font-mono text-sm space-y-2">
+                                <div>
+                                  <strong>Input:</strong> {example.input}
                                 </div>
-                                <div className="flex gap-2">
-                                  <span className="text-secondary font-bold min-w-[70px]">
-                                    Output:
-                                  </span>
-                                  <span>{example.output}</span>
+                                <div>
+                                  <strong>Output:</strong> {example.output}
                                 </div>
                                 {example.explanation && (
-                                  <div className="pt-2 border-t border-base-300 mt-2">
-                                    <span className="text-base-content/60 font-sans text-xs">
-                                      <span className="font-semibold">Explanation:</span>{" "}
-                                      {example.explanation}
-                                    </span>
+                                  <div className="pt-2 border-t border-base-300">
+                                    <strong>Explanation:</strong> {example.explanation}
                                   </div>
                                 )}
                               </div>
@@ -209,15 +229,15 @@ function SessionPage() {
                       </div>
                     )}
 
-                    {/* Constraints */}
-                    {problemData?.constraints && problemData.constraints.length > 0 && (
+                    {/* CONSTRAINTS */}
+                    {problemData?.constraints?.length > 0 && (
                       <div className="bg-base-100 rounded-xl shadow-sm p-5 border border-base-300">
-                        <h2 className="text-xl font-bold mb-4 text-base-content">Constraints</h2>
-                        <ul className="space-y-2 text-base-content/90">
+                        <h2 className="text-xl font-bold mb-4">Constraints</h2>
+                        <ul className="space-y-2">
                           {problemData.constraints.map((constraint, idx) => (
                             <li key={idx} className="flex gap-2">
-                              <span className="text-primary">•</span>
-                              <code className="text-sm">{constraint}</code>
+                              <span>•</span>
+                              <code>{constraint}</code>
                             </li>
                           ))}
                         </ul>
@@ -225,38 +245,37 @@ function SessionPage() {
                     )}
                   </div>
                 </div>
-              </Panel>
+              ) : (
+                <div className="flex-1 min-h-0">
+                  <PanelGroup direction="vertical">
+                    <Panel defaultSize={70} minSize={30}>
+                      <CodeEditorPanel
+                        selectedLanguage={selectedLanguage}
+                        code={code}
+                        isRunning={isRunning}
+                        onLanguageChange={handleLanguageChange}
+                        onCodeChange={(value) => setCode(value)}
+                        onRunCode={handleRunCode}
+                      />
+                    </Panel>
 
-              <PanelResizeHandle className="h-2 bg-base-300 hover:bg-primary transition-colors cursor-row-resize" />
+                    <PanelResizeHandle className="h-2 bg-base-300 hover:bg-primary transition-colors cursor-row-resize" />
 
-              <Panel defaultSize={50} minSize={20}>
-                <PanelGroup direction="vertical">
-                  <Panel defaultSize={70} minSize={30}>
-                    <CodeEditorPanel
-                      selectedLanguage={selectedLanguage}
-                      code={code}
-                      isRunning={isRunning}
-                      onLanguageChange={handleLanguageChange}
-                      onCodeChange={(value) => setCode(value)}
-                      onRunCode={handleRunCode}
-                    />
-                  </Panel>
+                    <Panel defaultSize={30} minSize={15}>
+                      <OutputPanel output={output} />
+                    </Panel>
+                  </PanelGroup>
+                </div>
+              )}
 
-                  <PanelResizeHandle className="h-2 bg-base-300 hover:bg-primary transition-colors cursor-row-resize" />
-
-                  <Panel defaultSize={30} minSize={15}>
-                    <OutputPanel output={output} />
-                  </Panel>
-                </PanelGroup>
-              </Panel>
-            </PanelGroup>
+            </div>
           </Panel>
 
           <PanelResizeHandle className="w-2 bg-base-300 hover:bg-primary transition-colors cursor-col-resize" />
 
-          {/* RIGHT PANEL - VIDEO CALLS & CHAT */}
+          {/* RIGHT PANEL - Fixed scroll container */}
           <Panel defaultSize={50} minSize={30}>
-            <div className="h-full bg-base-200 p-4 overflow-auto">
+            <div className="h-full bg-base-200 p-4 flex flex-col min-h-0 overflow-hidden">
               {isInitializingCall ? (
                 <div className="h-full flex items-center justify-center">
                   <div className="text-center">
@@ -277,7 +296,8 @@ function SessionPage() {
                   </div>
                 </div>
               ) : (
-                <div className="h-full">
+                /* Fix: flex-1 and overflow-y-auto here allows the inner items to scroll while keeping the overall layout intact */
+                <div className="flex-1 overflow-y-auto min-h-0 w-full rounded-xl [&_.str-video]:h-fit [&_.str-video]:bg-transparent [&_.str-video__layout]:h-fit [&_.str-video__layout]:bg-transparent">
                   <StreamVideo client={streamClient}>
                     <StreamCall call={call}>
                       <VideoCallUI chatClient={chatClient} channel={channel} />
@@ -287,6 +307,7 @@ function SessionPage() {
               )}
             </div>
           </Panel>
+
         </PanelGroup>
       </div>
     </div>
