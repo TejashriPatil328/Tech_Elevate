@@ -15,6 +15,10 @@ import useStreamClient from "../hooks/useStreamClient";
 import { StreamCall, StreamVideo } from "@stream-io/video-react-sdk";
 import VideoCallUI from "../components/VideoCallUI";
 
+// Import notification utilities exactly like the single-player problem view page
+import toast from "react-hot-toast";
+import confetti from "canvas-confetti";
+
 function SessionPage() {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -77,6 +81,43 @@ function SessionPage() {
     setOutput(null);
   };
 
+  // Helper logic to cleanly sanitize code blocks for cross-platform checking
+  const normalizeOutput = (outputStr) => {
+    if (!outputStr) return "";
+    return outputStr
+      .trim()
+      .split("\n")
+      .map((line) =>
+        line
+          .trim()
+          .replace(/\[\s+/g, "[")
+          .replace(/\s+\]/g, "]")
+          .replace(/\s*,\s*/g, ",")
+      )
+      .filter((line) => line.length > 0)
+      .join("\n");
+  };
+
+  const checkIfTestsPassed = (actualOutput, expectedOutput) => {
+    const normalizedActual = normalizeOutput(actualOutput);
+    const normalizedExpected = normalizeOutput(expectedOutput);
+    return normalizedActual === normalizedExpected;
+  };
+
+  const triggerConfetti = () => {
+    confetti({
+      particleCount: 80,
+      spread: 250,
+      origin: { x: 0.2, y: 0.6 },
+    });
+
+    confetti({
+      particleCount: 80,
+      spread: 250,
+      origin: { x: 0.8, y: 0.6 },
+    });
+  };
+
   const handleRunCode = async () => {
     setIsRunning(true);
     setOutput(null);
@@ -84,6 +125,21 @@ function SessionPage() {
     const result = await executeCode(selectedLanguage, code);
     setOutput(result);
     setIsRunning(false);
+
+    // Matching comparison and user response feedback logic sequence
+    if (result && result.success) {
+      const expectedOutput = problemData?.expectedOutput?.[selectedLanguage];
+      const testsPassed = checkIfTestsPassed(result.output, expectedOutput);
+
+      if (testsPassed) {
+        triggerConfetti();
+        toast.success("All tests passed! Great job!");
+      } else {
+        toast.error("Tests failed. Check your output!");
+      }
+    } else {
+      toast.error("Code execution failed!");
+    }
   };
 
   const handleEndSession = () => {
@@ -296,7 +352,6 @@ function SessionPage() {
                   </div>
                 </div>
               ) : (
-                /* Fix: flex-1 and overflow-y-auto here allows the inner items to scroll while keeping the overall layout intact */
                 <div className="flex-1 overflow-y-auto min-h-0 w-full rounded-xl [&_.str-video]:h-fit [&_.str-video]:bg-transparent [&_.str-video__layout]:h-fit [&_.str-video__layout]:bg-transparent">
                   <StreamVideo client={streamClient}>
                     <StreamCall call={call}>

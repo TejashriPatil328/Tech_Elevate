@@ -18,6 +18,19 @@ router.post("/", (req, res) => {
   let command = "";
 
   switch (language) {
+    case "cpp":
+      filename = path.join(tempDir, "main.cpp");
+      const outBinary = path.join(tempDir, "main.out");
+      fs.writeFileSync(filename, code);
+
+      // Compile and then execute based on the operating system
+      if (process.platform === "win32") {
+        command = `g++ "${filename}" -o "${outBinary}" && "${outBinary}"`;
+      } else {
+        command = `g++ "${filename}" -o "${outBinary}" && ./"${outBinary}"`;
+      }
+      break;
+
     case "python":
       filename = path.join(tempDir, "main.py");
       fs.writeFileSync(filename, code);
