@@ -1,3 +1,4 @@
+import { useState } from "react"; // 1. Added useState hook
 import { Link } from "react-router";
 import {
   ArrowRightIcon,
@@ -11,8 +12,11 @@ import {
 import { SignInButton } from "@clerk/clerk-react";
 
 function HomePage() {
+  // 2. Added modal state tracker
+  const [isVideoOpen, setIsVideoOpen] = useState(false);
+
   return (
-    <div className="bg-gradient-to-br from-base-100 via-base-200 to-base-300">
+    <div className="bg-gradient-to-br from-base-100 via-base-200 to-base-300 min-h-screen relative">
       {/* NAVBAR */}
       <nav className="bg-base-100/80 backdrop-blur-md border-b border-primary/20 sticky top-0 z-50 shadow-lg">
         <div className="max-w-7xl mx-auto p-4 flex items-center justify-between">
@@ -91,7 +95,11 @@ function HomePage() {
                 </button>
               </SignInButton>
 
-              <button className="btn btn-outline btn-lg">
+              {/* 3. Wired up button trigger click to open modal */}
+              <button 
+                onClick={() => setIsVideoOpen(true)}
+                className="btn btn-outline btn-lg"
+              >
                 <VideoIcon className="size-5" />
                 Watch Demo
               </button>
@@ -176,7 +184,43 @@ function HomePage() {
           </div>
         </div>
       </div>
+
+      {/* 4. VIDEO MODAL POP-UP OVERLAY */}
+      {isVideoOpen && (
+        <div 
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center p-4 transition-all duration-300"
+          onClick={() => setIsVideoOpen(false)}
+        >
+          <div 
+            className="relative w-full max-w-4xl bg-base-100 rounded-2xl overflow-hidden shadow-2xl border border-base-content/10 animate-in fade-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()} // Prevents closing when clicking inside the video panel
+          >
+            {/* Close Cross Header Button */}
+            <button 
+              onClick={() => setIsVideoOpen(false)}
+              className="absolute top-4 right-4 z-10 btn btn-circle btn-sm btn-ghost bg-base-300/50 hover:bg-base-300 text-base-content"
+            >
+              ✕
+            </button>
+            
+            {/* Responsive 16:9 Aspect Video Player container */}
+            <div className="aspect-video w-full bg-black">
+              {/* Option A: Using your local public file -> src="/demo.mp4" */}
+              {/* Option B: Using an unlisted Youtube string -> src="https://www.youtube.com/embed/VIDEO_ID?autoplay=1" */}
+              <video 
+                className="w-full h-full object-contain"
+                src="/demo.mp4" 
+                controls 
+                autoPlay
+              >
+                Your browser does not support the video tag.
+              </video>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
 export default HomePage;
