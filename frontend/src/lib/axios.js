@@ -7,4 +7,17 @@ const axiosInstance = axios.create({
   withCredentials: true,
 });
 
+// Add Clerk token to every request
+axiosInstance.interceptors.request.use(async (config) => {
+  if (window.Clerk?.session) {
+    const token = await window.Clerk.session.getToken();
+
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+
+  return config;
+});
+
 export default axiosInstance;
